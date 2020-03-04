@@ -54,15 +54,19 @@ public class OpenShiftAuthenticator implements Authenticator, IHttpConstants{
 	
 	@Override
 	public Request authenticate(Route route, Response response) throws IOException {
+		LOGGER.fine("Executing method: authenticate");
 		if(unauthorizedForCluster(response)){
+			LOGGER.fine("Building authRequest");
 			String requestUrl = response.request().url().toString();
 			Request authRequest = new Request.Builder()
 					.addHeader(CSRF_TOKEN, "1")
 					.url(route.address().url().toString() + "oauth/authorize?response_type=token&client_id=openshift-challenging-client")
 					.build();
+			LOGGER.fine(format("AuthRequest: %s", authRequest));
 			try (
 				Response authResponse = tryAuth(authRequest)){
 				if(authResponse.isSuccessful()) {
+					LOGGER.fine("AuthResponse is successful: extracting token");
 					String token = extractAndSetAuthContextToken(authResponse);
 					return response.request().newBuilder()
 							.header(IHttpConstants.PROPERTY_AUTHORIZATION, String.format("%s %s", IHttpConstants.AUTHORIZATION_BEARER, token))
@@ -81,6 +85,7 @@ public class OpenShiftAuthenticator implements Authenticator, IHttpConstants{
 	}
 	
 	private Response tryAuth(Request authRequest) throws IOException {
+		LOGGER.fine("Executing method: authenticate");
 		return okClient
 		.newBuilder()
 		.authenticator(new Authenticator() {

@@ -26,6 +26,8 @@ import okhttp3.Request.Builder;
  */
 public class BasicChallangeHandler implements IChallangeHandler{
 
+	public static final Logger LOGGER = Logger.getLogger(BasicChallangeHandler.class.getName());
+	
 	private IAuthorizationContext context;
 
 	public BasicChallangeHandler(IAuthorizationContext context) {
@@ -40,6 +42,9 @@ public class BasicChallangeHandler implements IChallangeHandler{
 	@Override
 	public Builder handleChallange(Builder builder) {
 		StringBuilder value = new StringBuilder();
+		LOGGER.fine("About to handle basic challenge");
+		LOGGER.fine(format("UserName: %s", context.getUserName()));
+		LOGGER.fine(format("Password: %s", context.getPassword()));
 		if(StringUtils.isNotBlank(context.getUserName())) {
 			value.append(context.getUserName()).append(":");
 		}
