@@ -62,7 +62,7 @@ public class OpenShiftAuthenticator implements Authenticator, IHttpConstants{
 					.addHeader(CSRF_TOKEN, "1")
 					.url(route.address().url().toString() + "oauth/authorize?response_type=token&client_id=openshift-challenging-client")
 					.build();
-			LOGGER.fine(format("AuthRequest: %s", authRequest));
+			LOGGER.fine(String.format("AuthRequest: %s", authRequest));
 			try (
 				Response authResponse = tryAuth(authRequest)){
 				if(authResponse.isSuccessful()) {
