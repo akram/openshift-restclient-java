@@ -11,7 +11,7 @@
 package com.openshift.internal.restclient.okhttp;
 
 import org.apache.commons.lang.StringUtils;
-
+import java.util.logging.Logger;
 import com.openshift.restclient.authorization.IAuthorizationContext;
 import com.openshift.restclient.http.IHttpConstants;
 import com.openshift.restclient.utils.Base64Coder;
@@ -43,8 +43,8 @@ public class BasicChallangeHandler implements IChallangeHandler{
 	public Builder handleChallange(Builder builder) {
 		StringBuilder value = new StringBuilder();
 		LOGGER.fine("About to handle basic challenge");
-		LOGGER.fine(format("UserName: %s", context.getUserName()));
-		LOGGER.fine(format("Password: %s", context.getPassword()));
+		LOGGER.fine(String.format("UserName: %s", context.getUserName()));
+		LOGGER.fine(String.format("Password: %s", context.getPassword()));
 		if(StringUtils.isNotBlank(context.getUserName())) {
 			value.append(context.getUserName()).append(":");
 		}
