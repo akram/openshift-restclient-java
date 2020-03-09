@@ -10,6 +10,11 @@
  ******************************************************************************/
 package com.openshift.internal.restclient.api.capabilities;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
+
 import com.openshift.internal.restclient.DefaultClient;
 import com.openshift.internal.restclient.URLBuilder;
 import com.openshift.internal.restclient.capability.AbstractCapability;
@@ -17,26 +22,21 @@ import com.openshift.internal.restclient.okhttp.ResponseCodeInterceptor;
 import com.openshift.internal.restclient.okhttp.WebSocketAdapter;
 import com.openshift.restclient.IApiTypeMapper;
 import com.openshift.restclient.IClient;
-import com.openshift.restclient.capability.IStoppable;
 import com.openshift.restclient.api.capabilities.IPodExec;
+import com.openshift.restclient.capability.IStoppable;
 import com.openshift.restclient.http.IHttpConstants;
 import com.openshift.restclient.model.IPod;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.ws.WebSocket;
 import okhttp3.ws.WebSocketCall;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PodExec extends AbstractCapability implements IPodExec {
 
-	private static final Logger LOG = LoggerFactory.getLogger(IPodExec.class);
+	private static final Logger LOG = Logger.getLogger(IPodExec.class.getName());
 	private static final String CAPABILITY = "exec";
 
 	private static final String COMMAND = "command";
@@ -155,7 +155,7 @@ public class PodExec extends AbstractCapability implements IPodExec {
 					listener.onExecErr(msg);
 					break;
 				default:
-					LOG.warn("Unable to deliver exec message of type [%d]: %s", channel, msg );
+					LOG.warning(String.format("Unable to deliver exec message of type ["+ channel + "]: %s", msg ));
 			}
 		}
 

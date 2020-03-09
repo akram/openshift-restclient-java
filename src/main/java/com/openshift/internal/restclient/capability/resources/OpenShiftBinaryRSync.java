@@ -16,11 +16,10 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.openshift.restclient.IClient;
 import com.openshift.restclient.OpenShiftException;
@@ -34,7 +33,7 @@ import com.openshift.restclient.capability.resources.IRSyncable;
  */
 public class OpenShiftBinaryRSync extends AbstractOpenShiftBinaryCapability implements IRSyncable {
 	
-	private static final Logger LOG = LoggerFactory.getLogger(OpenShiftBinaryRSync.class);
+	private static final Logger LOG = Logger.getLogger(OpenShiftBinaryRSync.class.getName());
 
 	private static final long WAIT_FOR_EXIT_TIMEOUT = 5; // mins
 
@@ -106,7 +105,7 @@ public class OpenShiftBinaryRSync extends AbstractOpenShiftBinaryCapability impl
 		try {
 			return IOUtils.toString(errorStream);
 		} catch (IOException e) {
-			LOG.error("Could not retrieve error message from process", e);
+			LOG.severe("Could not retrieve error message from process: stacktrace: " + e.getStackTrace());
 			return null;
 		}
 	}
