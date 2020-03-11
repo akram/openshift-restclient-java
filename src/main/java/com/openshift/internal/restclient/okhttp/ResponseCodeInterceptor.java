@@ -105,7 +105,11 @@ public class ResponseCodeInterceptor implements Interceptor, IHttpConstants {
 	}
 	
 	public static OpenShiftException createOpenShiftException(IClient client, Response response, Throwable e) throws IOException{
-		LOGGER.fine("Response: " + response + "stackTrace: " + e.getStackTrace());
+		LOGGER.fine("Response: " + response + "stackTrace: " + e);
+	    if( e != null ) {
+	        LOGGER.fine("Response: " + response + "stackTrace: " + e.getStackTrace());
+	    }
+
 		IStatus status = getStatus(response.body().string());
 		int responseCode = response.code();
 		if(status != null && status.getCode() != 0) {
