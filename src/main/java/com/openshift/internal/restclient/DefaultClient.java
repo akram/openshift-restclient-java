@@ -84,7 +84,9 @@ public class DefaultClient implements IClient, IHttpConstants{
 		if(this.factory != null) {
 			this.factory.setClient(this);
 		}
-		LOGGER.fine("DefaultClient initialized");
+		LOGGER.fine("DefaultClient initialized: " + this);
+	    LOGGER.fine("DefaultClient url: " + baseUrl);
+        LOGGER.fine("DefaultClient client: " + client);
 		initMasterVersion("version/openshift", new VersionCallback(version -> this.openShiftVersion = version));
 		initMasterVersion("version", new VersionCallback(version -> this.kubernetesVersion = version));
 		this.typeMapper = typeMapper != null ? typeMapper :  new ApiTypeMapper(baseUrl.toString(), client);
@@ -234,7 +236,7 @@ public class DefaultClient implements IClient, IHttpConstants{
 	@SuppressWarnings("unchecked")
 	public <T> T execute(ITypeFactory factory, String method, String kind, String namespace, String name,
 	    String subresource, String subContext, JSONSerializeable payload, Map<String, String> params) {
-        LOGGER.fine("Executing: method " + method + "on namespace: " + namespace);
+        LOGGER.fine("Executing: method " + method + " on namespace: " + namespace);
 		if(factory == null) {
 			throw new OpenShiftException("ITypeFactory is null while trying to call IClient#execute");
 		}
@@ -376,6 +378,7 @@ public class DefaultClient implements IClient, IHttpConstants{
 	}
 	
 	private void initMasterVersion(String versionInfoType, Callback callback) {
+        LOGGER.warning("Initaliazing openshift version: " + versionInfoType);
 		try {
 			Request request = new Request.Builder()
 					.url(new URL(this.baseUrl, versionInfoType))

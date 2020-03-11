@@ -55,24 +55,32 @@ public class ResponseCodeInterceptor implements Interceptor, IHttpConstants {
 	public Response intercept(Chain chain) throws IOException {
 		Response response = chain.proceed(chain.request());
 		if(!response.isSuccessful() && StringUtils.isBlank(response.request().header(X_OPENSHIFT_IGNORE_RCI))) {
-			switch(response.code()) {
+            int code = response.code();
+            LOGGER.fine("Response is not succesful: response code : " + code);
+            switch(code) {
 			case STATUS_UPGRADE_PROTOCOL:
 			case STATUS_MOVED_PERMANENTLY:
 				break;
 			case STATUS_MOVED_TEMPORARILY:
 				response = makeSuccessIfAuthorized(response);
+		        LOGGER.fine("Making response as being authorized: " + response);
 				break;
 			default:
 				if ( response.request().tag() instanceof Ignore == false ) {
-					throw createOpenShiftException(client, response, null);
+				    LOGGER.fine("Response is not any of the expected codes and header not set to ignore: " + response.body());
+					OpenShiftException openShiftException = createOpenShiftException(client, response, null);
+	                LOGGER.fine("Return the exception: " + openShiftException);
+                    throw openShiftException;
 				}
 			}
 		}
+        LOGGER.fine("Returning response: " + response);
 		return response;
 	}
 	
 	private Response makeSuccessIfAuthorized(Response response) {
 		String location = response.header(PROPERTY_LOCATION);
+        LOGGER.fine("Getting access token from location: " + location);
 		if(StringUtils.isNotBlank(location) && URIUtils.splitFragment(location).containsKey(OpenShiftAuthenticator.ACCESS_TOKEN)) {
 			response = response.newBuilder()
 				.request(response.request())
@@ -88,19 +96,22 @@ public class ResponseCodeInterceptor implements Interceptor, IHttpConstants {
 	}
 	
 	public static IStatus getStatus(String response) {
-		if(response != null && response.startsWith("{")) {
-			return new Status(response);
+	     IStatus status = null;
+         if(response != null && response.startsWith("{")) {
+			status =  new Status(response);
 		}
-		return null;
+         LOGGER.fine("response status is : " + status);
+        return status ;
 	}
 	
 	public static OpenShiftException createOpenShiftException(IClient client, Response response, Throwable e) throws IOException{
-		LOGGER.fine("response: " + response + "stackTrace: " + e.getStackTrace());
+		LOGGER.fine("Response: " + response + "stackTrace: " + e.getStackTrace());
 		IStatus status = getStatus(response.body().string());
 		int responseCode = response.code();
 		if(status != null && status.getCode() != 0) {
 			responseCode = status.getCode();
 		}
+        LOGGER.fine("Response code : " + responseCode);
 		switch(responseCode) {
 		case STATUS_BAD_REQUEST:
 			return new BadRequestException(e, status, response.request().url().toString());
@@ -108,7 +119,10 @@ public class ResponseCodeInterceptor implements Interceptor, IHttpConstants {
 			return new ResourceForbiddenException(status != null ? status.getMessage() : "Resource Forbidden", status, e);
 		case STATUS_UNAUTHORIZED:
 			String link = String.format("%s/oauth/token/request", client.getBaseURL());
+	        LOGGER.fine("Link URL: " + link);
+	        LOGGER.fine("Request URL: " + response.request().url());
 			AuthorizationDetails details = new AuthorizationDetails(response.headers(), link);
+	        LOGGER.fine("Response: Unauthorized: AuthorizationDetails: " + details);
 			return new com.openshift.restclient.authorization.UnauthorizedException(details, status);
 		case IHttpConstants.STATUS_NOT_FOUND:
 			return new NotFoundException(e, status, status == null ? "Not Found" : status.getMessage());
