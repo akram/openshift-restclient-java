@@ -28,6 +28,7 @@ import com.openshift.restclient.authorization.UnauthorizedException;
 import com.openshift.restclient.http.IHttpConstants;
 
 import okhttp3.Authenticator;
+import okhttp3.Call;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Request.Builder;
@@ -85,32 +86,37 @@ public class OpenShiftAuthenticator implements Authenticator, IHttpConstants{
 	}
 	
 	private Response tryAuth(Request authRequest) throws IOException {
-		LOGGER.fine("Executing method: authenticate");
-		return okClient
-		.newBuilder()
-		.authenticator(new Authenticator() {
-			
+		LOGGER.fine("Executing method: authenticate with authentication request: " + authRequest);
+		Authenticator authenticator = new Authenticator() {
 			@Override
 			public Request authenticate(Route route, Response response) throws IOException {
+			    LOGGER.fine("Authenticating in " + this.getClass().getName() + " : authenticate");
+                LOGGER.fine("AUTH_ATTEMPTS:  " + AUTH_ATTEMPTS);
 				if(StringUtils.isNotBlank(response.request().header(AUTH_ATTEMPTS))) {
+	                LOGGER.fine("Returning null as we tried alread to authenticate");
 					return null;
 				}
-				if(StringUtils.isNotBlank(response.header(IHttpConstants.PROPERTY_WWW_AUTHENTICATE))) {
+				if(StringUtils.isNotBlank(response.header(PROPERTY_WWW_AUTHENTICATE))) {
+                    LOGGER.fine("Header " + PROPERTY_WWW_AUTHENTICATE + " found in response. Will try remaining handlers: " + challangeHandlers);
 					for (IChallangeHandler challangeHandler : challangeHandlers) {
+	                    LOGGER.fine("Challenge handler " + challangeHandler + " can handle it?");
 						if(!challangeHandler.canHandle(response.headers())) {
-							Builder requestBuilder = response.request().newBuilder()
-									.header(AUTH_ATTEMPTS, "1");
-							return challangeHandler.handleChallange(requestBuilder).build();
+       	                    LOGGER.fine("Challenge handler " + challangeHandler + " can not handle it: So we will handle it. (well yes this is a bug)");
+							Builder requestBuilder = response.request().newBuilder().header(AUTH_ATTEMPTS, "1");
+                            LOGGER.fine("Let's keep a track that we try a challenge once: setting AUTH_ATTEMPTS to 1 in request" );
+							Request handledResponse = challangeHandler.handleChallange(requestBuilder).build();
+                            LOGGER.fine("Returning handled response: " + handledResponse);
+                            return handledResponse;
 						}
 					}
 				}
+                LOGGER.fine("Returning null response: PROPERTY_WWW_AUTHENTICATE was not found in header");
 				return null;
 			}
-		})
-		.followRedirects(false)
-		.followRedirects(false)
-		.build()
-		.newCall(authRequest).execute();
+		};
+        Call configuredOkClientCall = okClient.newBuilder().authenticator(authenticator).followRedirects(false).followRedirects(false).build().newCall(authRequest);
+        LOGGER.fine("About to execute the client call: " + configuredOkClientCall);
+        return configuredOkClientCall.execute();
 	}
 	
 	private IAuthorizationDetails captureAuthDetails(String url) {
