@@ -26,6 +26,7 @@ import com.openshift.restclient.authorization.IAuthorizationContext;
 import com.openshift.restclient.authorization.IAuthorizationDetails;
 import com.openshift.restclient.authorization.UnauthorizedException;
 import com.openshift.restclient.http.IHttpConstants;
+import com.openshift.restclient.model.IStatus;
 
 import okhttp3.Authenticator;
 import okhttp3.Call;
@@ -69,12 +70,17 @@ public class OpenShiftAuthenticator implements Authenticator, IHttpConstants{
 				if(authResponse.isSuccessful()) {
 					LOGGER.fine("AuthResponse is successful: extracting token");
 					String token = extractAndSetAuthContextToken(authResponse);
-					return response.request().newBuilder()
-							.header(IHttpConstants.PROPERTY_AUTHORIZATION, String.format("%s %s", IHttpConstants.AUTHORIZATION_BEARER, token))
-							.build();
+					String bearer = String.format("%s %s", AUTHORIZATION_BEARER, token);
+                    Builder preparedRequest = response.request().newBuilder().header(PROPERTY_AUTHORIZATION, bearer);
+                    LOGGER.fine("Sending authenticated request now has token: " + preparedRequest);
+                    return preparedRequest.build();
 				}
+			} {
+			     IStatus status = ResponseCodeInterceptor.getStatus(response.body().string());
+	             UnauthorizedException unauthorizedException = new UnauthorizedException(captureAuthDetails(requestUrl), status);
+                 LOGGER.fine("The tryAuth method failed. Returning an exception :" + unauthorizedException);
+	             throw unauthorizedException;
 			}
-			throw new UnauthorizedException(captureAuthDetails(requestUrl), ResponseCodeInterceptor.getStatus(response.body().string()));
 		}
 
 		return null;
